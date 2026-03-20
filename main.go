@@ -19,3 +19,7 @@ func main() {
 	}
 
 }
+
+func kaju() {
+	println("Kaju")
+}
