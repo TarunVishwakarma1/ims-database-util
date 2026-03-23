@@ -11,6 +11,7 @@ type Config struct {
 	PostgresURL string
 	RedisURL    string
 	Port        string
+	HMACSecret  string
 }
 
 func Load() *Config {
@@ -22,7 +23,8 @@ func Load() *Config {
 	return &Config{
 		PostgresURL: getEnv("DATABASE_URL", "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379/0"),
-		Port:        getEnv("PORT", "8080"),
+		Port:        getEnv("PORT", "8081"),
+		HMACSecret:  getEnv("HMAC_SECRET", "super-secret-local-dev-key-change-me"),
 	}
 
 }

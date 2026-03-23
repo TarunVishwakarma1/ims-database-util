@@ -16,15 +16,15 @@ func main() {
 
 	pgPool, err := storage.InitPostgres(ctx, cfg.PostgresURL)
 	if err != nil {
-		slog.Error("Fatal: Database connection failed: %v", "Error", err)
+		slog.Error("Fatal: Database connection failed:", "Error", err)
 	}
 	defer pgPool.Close()
 
 	rdb, err := storage.InitRedis(ctx, cfg.RedisURL)
 	if err != nil {
-		slog.Error("Fatal: Redis connection failed: %v", "Error", err)
+		slog.Error("Fatal: Redis connection failed:", "Error", err)
 	}
-	rdb.Close()
+	defer rdb.Close()
 
 	slog.Info("🚀 Server is ready and listening on port", "PORT", cfg.Port)
 

@@ -32,8 +32,8 @@ func InitRedis(ctx context.Context, connString string) (*redis.Client, error) {
 
 		client := redis.NewClient(opts)
 
-		if pingErr := client.Ping(ctx); pingErr != nil {
-			err = fmt.Errorf("redis is not reachable: %v", pingErr)
+		if pingErr := client.Ping(ctx).Err(); pingErr != nil {
+			err = fmt.Errorf("redis is not reachable: %w", pingErr)
 			return
 		}
 
