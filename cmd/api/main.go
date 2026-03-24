@@ -3,8 +3,14 @@ package main
 import (
 	"context"
 	"ims-database-util/internal/config"
+	"ims-database-util/internal/repository"
+	"ims-database-util/internal/router"
 	"ims-database-util/internal/storage"
 	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -26,7 +32,38 @@ func main() {
 	}
 	defer rdb.Close()
 
-	slog.Info("🚀 Server is ready and listening on port", "PORT", cfg.Port)
+	userRepo := repository.NewUserRepository(pgPool)
 
-	select {}
+	appRouter := router.Setup(cfg, userRepo)
+
+	srv := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      appRouter,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	go func() {
+		slog.Info("🚀 Server listening on", "PORT", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil {
+			slog.Error("Error while Listen and serve:", "ERROR", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	slog.Info("Shutting down server gracefully...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("Server forced to shutdown:", "ERROR", err)
+	}
+
+	slog.Info("Server exited properly")
+
 }
