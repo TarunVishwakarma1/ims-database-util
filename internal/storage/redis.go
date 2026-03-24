@@ -15,6 +15,11 @@ var (
 	redisOnce     sync.Once
 )
 
+// InitRedis initializes the package-level Redis client using the provided connection URL.
+// It parses the URL, configures connection timeouts and pool size, verifies connectivity with Ping,
+// and caches the resulting client so subsequent calls return the same instance.
+// It returns the initialized client and any error encountered during the first initialization attempt;
+// if initialization failed the returned client may be nil.
 func InitRedis(ctx context.Context, connString string) (*redis.Client, error) {
 	var err error
 
@@ -43,6 +48,8 @@ func InitRedis(ctx context.Context, connString string) (*redis.Client, error) {
 	return redisInstance, err
 }
 
+// GetRedis returns the package-level Redis client instance.
+// It panics if InitRedis has not successfully initialized the client.
 func GetRedis() *redis.Client {
 	if redisInstance == nil {
 		panic("Redis client accessed before initialization")

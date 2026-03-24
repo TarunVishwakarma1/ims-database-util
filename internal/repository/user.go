@@ -29,6 +29,7 @@ type redisSessionRepo struct {
 	client *redis.Client
 }
 
+// NewSessionRepository creates a SessionRepository that uses the provided Redis client for persistence.
 func NewSessionRepository(client *redis.Client) SessionRepository {
 	return &redisSessionRepo{client: client}
 }

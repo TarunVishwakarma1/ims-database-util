@@ -25,6 +25,8 @@ type postgresUserRepo struct {
 	pool *pgxpool.Pool
 }
 
+// NewUserRepository creates a UserRepository backed by the provided PostgreSQL connection pool.
+// The returned repository uses the given pgxpool.Pool for database operations.
 func NewUserRepository(pool *pgxpool.Pool) UserRepository {
 	return &postgresUserRepo{pool: pool}
 }

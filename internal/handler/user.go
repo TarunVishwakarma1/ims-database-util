@@ -10,6 +10,7 @@ type UserHandler struct {
 	repo repository.UserRepository
 }
 
+// NewUserHandler creates a UserHandler that uses the provided repository for user operations.
 func NewUserHandler(repo repository.UserRepository) *UserHandler {
 	return &UserHandler{repo: repo}
 }

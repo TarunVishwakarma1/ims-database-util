@@ -15,6 +15,12 @@ var (
 	pgOnce     sync.Once
 )
 
+// InitPostgres initializes and stores a singleton pgxpool.Pool using the given
+// connection string, verifies connectivity, and returns the shared pool.
+// Initialization is performed exactly once; subsequent calls return the same
+// pool and the error (if any) from the initial attempt. The function configures
+// the connection pool with sensible defaults and pings the database to ensure
+// reachability before storing the pool.
 func InitPostgres(context context.Context, connString string) (*pgxpool.Pool, error) {
 	var err error
 	pgOnce.Do(func() {
@@ -46,6 +52,8 @@ func InitPostgres(context context.Context, connString string) (*pgxpool.Pool, er
 	return pgInstance, err
 }
 
+// GetPostgres provides access to the package-level PostgreSQL connection pool.
+// It returns the initialized *pgxpool.Pool and will panic if the pool has not been initialized.
 func GetPostgres() *pgxpool.Pool {
 	if pgInstance == nil {
 		panic("PostgreSQL pool accessed before initialization")

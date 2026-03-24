@@ -10,6 +10,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// Setup creates a chi router configured with standard middleware and the application's HTTP routes.
+// The router registers request ID, real IP, logging, and recoverer middleware, exposes a public GET /health endpoint that responds "OK", and a grouped set of routes protected by HMAC using cfg.HMACSecret which includes GET /v1/user/profile handled by the user repository-backed handler.
 func Setup(cfg *config.Config, userRepo repository.UserRepository) *chi.Mux {
 	r := chi.NewRouter()
 

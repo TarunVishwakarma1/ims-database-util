@@ -14,6 +14,13 @@ import (
 	"time"
 )
 
+// main boots the HTTP API server, initializes dependencies, and handles graceful shutdown.
+//
+// It loads application configuration, creates a 10-second startup context, and initializes
+// PostgreSQL and Redis connections. It constructs the application router and HTTP server
+// (with 10s read/write timeouts and a 120s idle timeout), starts the server, and blocks
+// until a SIGINT or SIGTERM is received. Once signaled, it attempts a graceful shutdown
+// with a 30-second timeout and logs shutdown outcome.
 func main() {
 	cfg := config.Load()
 
