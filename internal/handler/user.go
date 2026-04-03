@@ -1,18 +1,18 @@
 package handler
 
 import (
-	"ims-database-util/internal/repository"
+	"ims-database-util/internal/service"
 	"ims-database-util/internal/utils"
 	"net/http"
 )
 
 type UserHandler struct {
-	repo repository.UserRepository
+	service service.UserService
 }
 
-// NewUserHandler creates a UserHandler that uses the provided repository for user operations.
-func NewUserHandler(repo repository.UserRepository) *UserHandler {
-	return &UserHandler{repo: repo}
+// NewUserHandler creates a UserHandler that uses the provided UserService.
+func NewUserHandler(svc service.UserService) *UserHandler {
+	return &UserHandler{service: svc}
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
@@ -21,8 +21,8 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.JSONResponse(w, http.StatusBadRequest, map[string]string{"error": "Missing user ID header"})
 		return
 	}
-	user, err := h.repo.GetUserByID(r.Context(), userId)
 
+	user, err := h.service.GetUserByID(r.Context(), userId)
 	if err != nil {
 		utils.JSONResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return

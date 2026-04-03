@@ -2,93 +2,48 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type SessionData struct {
-	Sub       string
-	Sid       string
-	IP        string
-	UserAgent string
+type User struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-type SessionRepository interface {
-	SaveRefreshToken(ctx context.Context, hashedToken string, data SessionData, expiresIn time.Duration) error
-	GetSession(ctx context.Context, hashedToken string) (*SessionData, error)
-	RevokeSession(ctx context.Context, hashedToken string) error
-	DenyListAccessToken(ctx context.Context, jti string, expiresIn time.Duration) error
-	IsTokenRevoked(ctx context.Context, jti string) (bool, error)
+type UserRepository interface {
+	GetUserByID(ctx context.Context, id string) (*User, error)
 }
 
-type redisSessionRepo struct {
-	client *redis.Client
+type postgresUserRepo struct {
+	pool *pgxpool.Pool
 }
 
-// NewSessionRepository creates a SessionRepository that uses the provided Redis client for persistence.
-func NewSessionRepository(client *redis.Client) SessionRepository {
-	return &redisSessionRepo{client: client}
+// NewUserRepository creates a UserRepository backed by the provided PostgreSQL connection pool.
+func NewUserRepository(pool *pgxpool.Pool) UserRepository {
+	return &postgresUserRepo{pool: pool}
 }
 
-func (r *redisSessionRepo) SaveRefreshToken(ctx context.Context, hashedToken string, data SessionData, expiresIn time.Duration) error {
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("failed to marshal session data: %w", err)
-	}
-	key := fmt.Sprintf("refresh: %s", hashedToken)
-	if err := r.client.Set(ctx, key, bytes, expiresIn).Err(); err != nil {
-		return fmt.Errorf("failed to save refresh token to redis: %w", err)
-	}
-	return nil
-}
+func (r *postgresUserRepo) GetUserByID(ctx context.Context, id string) (*User, error) {
+	query := `SELECT id, email, name, created_at 
+	FROM users 
+	WHERE id = $1`
 
-func (r *redisSessionRepo) GetSession(ctx context.Context, hashedToken string) (*SessionData, error) {
-	key := fmt.Sprintf("refresh: %s", hashedToken)
-	val, err := r.client.Get(ctx, key).Result()
+	var user User
+
+	err := r.pool.QueryRow(ctx, query, id).Scan(&user.ID, &user.Email, &user.Name, &user.CreatedAt)
 
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return nil, nil // Token not found (expired or invalid)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get session from redis: %w", err)
+		return nil, fmt.Errorf("database error fetching user %s: %w", id, err)
 	}
-
-	var data SessionData
-	if err := json.Unmarshal([]byte(val), &data); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal session data: %w", err)
-	}
-
-	return &data, nil
-}
-
-func (r *redisSessionRepo) RevokeSession(ctx context.Context, hashedToken string) error {
-	key := fmt.Sprintf("refresh:%s", hashedToken)
-	if err := r.client.Del(ctx, key).Err(); err != nil {
-		return fmt.Errorf("failed to delete session: %w", err)
-	}
-	return nil
-}
-
-func (r *redisSessionRepo) DenyListAccessToken(ctx context.Context, jti string, expiresIn time.Duration) error {
-	key := fmt.Sprintf("denylist:%s", jti)
-	if err := r.client.Set(ctx, key, "revoked", expiresIn).Err(); err != nil {
-		return fmt.Errorf("failed to denylist access token: %w", err)
-	}
-	return nil
-}
-
-func (r *redisSessionRepo) IsTokenRevoked(ctx context.Context, jti string) (bool, error) {
-	key := fmt.Sprintf("denylist:%s", jti)
-	err := r.client.Get(ctx, key).Err()
-	if err == nil {
-		return true, nil // Key exists, token is revoked
-	}
-	if errors.Is(err, redis.Nil) {
-		return false, nil // Key does not exist, token is valid
-	}
-	return false, fmt.Errorf("failed to check denylist: %w", err)
+	return &user, nil
 }

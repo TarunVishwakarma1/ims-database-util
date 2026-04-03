@@ -1,27 +1,27 @@
 package router
 
 import (
-	"ims-database-util/internal/config"
+	"ims-database-util/internal/app"
 	"ims-database-util/internal/handler"
-	"ims-database-util/internal/repository"
+	"ims-database-util/internal/middleware"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 )
 
 // Setup creates a chi router configured with standard middleware and the application's HTTP routes.
-// The router registers request ID, real IP, logging, and recoverer middleware, exposes a public GET /health endpoint that responds "OK", and a grouped set of routes protected by HMAC using cfg.HMACSecret which includes GET /v1/user/profile handled by the user repository-backed handler.
-func Setup(cfg *config.Config, userRepo repository.UserRepository, productRepo repository.ProductRepository) *chi.Mux {
+// It accepts the central App struct so new domains can be wired without changing this signature.
+func Setup(a *app.App) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	r.Use(chimw.RequestID)
+	r.Use(chimw.RealIP)
+	r.Use(chimw.Logger)
+	r.Use(chimw.Recoverer)
 
-	userHandler := handler.NewUserHandler(userRepo)
-	productHandler := handler.NewProductHandler(productRepo)
+	userHandler := handler.NewUserHandler(a.UserService)
+	productHandler := handler.NewProductHandler(a.ProductService)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -29,12 +29,12 @@ func Setup(cfg *config.Config, userRepo repository.UserRepository, productRepo r
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(handler.RequireHMAC(cfg.HMACSecret))
+		r.Use(middleware.RequireHMAC(a.Config.HMACSecret))
 		r.Get("/v1/user/profile", userHandler.GetProfile)
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Get("/v1/ims/get/products", productHandler.GetProductByUserId)
+		r.Get("/v1/products/stream", productHandler.StreamProducts)
 	})
 
 	return r

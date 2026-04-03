@@ -24,7 +24,7 @@ type Product struct {
 }
 
 type ProductRepository interface {
-	GetProducts(ctx context.Context) ([]Product, error)
+	StreamProducts(ctx context.Context, batchSize int, handler func([]Product) error) error
 	GetProductById(ctx context.Context, productId string) (Product, error)
 	GetProductsByUserId(ctx context.Context, userId string) ([]Product, error)
 	UpdateProductById(ctx context.Context, productId string, product Product) (Product, error)
@@ -40,21 +40,27 @@ func NewProductRepository(pool *pgxpool.Pool) ProductRepository {
 	return &postgresProductRepo{pool: pool}
 }
 
-func (r *postgresProductRepo) GetProducts(ctx context.Context) ([]Product, error) {
-	query := `SELECT id, sku, name, category, price, stock, status, last_updated, updated_by, added_by, user_id, added_at 
-	FROM PRODUCTS`
+func (r *postgresProductRepo) StreamProducts(
+	ctx context.Context,
+	batchSize int,
+	handler func([]Product) error,
+) error {
 
-	var products []Product
-
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, `
+		SELECT id, sku, name, category, price, stock, status,
+		       last_updated, updated_by, added_by, user_id, added_at
+		FROM products
+		ORDER BY added_at
+	`)
 	if err != nil {
-		return nil, fmt.Errorf("error while getting all products from query: %w", err)
+		return fmt.Errorf("query error: %w", err)
 	}
-	defer rows.Close() // ALWAYS close rows!
+	defer rows.Close()
+
+	batch := make([]Product, 0, batchSize)
 
 	for rows.Next() {
 		var p Product
-		// Ensure the order of columns in Scan matches the SELECT statement
 		if err := rows.Scan(
 			&p.Id,
 			&p.Sku,
@@ -69,18 +75,26 @@ func (r *postgresProductRepo) GetProducts(ctx context.Context) ([]Product, error
 			&p.UserId,
 			&p.AddedAt,
 		); err != nil {
-			return nil, fmt.Errorf("error scanning product row: %w", err)
+			return fmt.Errorf("scan error: %w", err)
 		}
 
-		products = append(products, p)
+		batch = append(batch, p)
+
+		if len(batch) == batchSize {
+			if err := handler(batch); err != nil {
+				return err
+			}
+			batch = batch[:0]
+		}
 	}
 
-	// Always check for errors that might have occurred during iteration
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	if len(batch) > 0 {
+		if err := handler(batch); err != nil {
+			return err
+		}
 	}
 
-	return products, nil
+	return rows.Err()
 }
 
 func (r *postgresProductRepo) GetProductById(ctx context.Context, productId string) (Product, error) {

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "internal/gen/productpb";
+
+message Empty {}
+
+message Product {
+  string id = 1;
+  string sku = 2;
+  string name = 3;
+  string category = 4;
+  double price = 5;
+  int32 stock = 6;
+  string status = 7;
+  string last_updated = 8;
+  string updated_by = 9;
+  string added_by = 10;
+  string user_id = 11;
+  string added_at = 12;
+}
+
+service ProductService {
+  rpc StreamProducts(Empty) returns (stream Product);
+}
