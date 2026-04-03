@@ -13,6 +13,7 @@ type CustomerHandler struct {
 	service service.CustomerService
 }
 
+// NewCustomerHandler creates and returns a *CustomerHandler that uses the provided service.CustomerService.
 func NewCustomerHandler(service service.CustomerService) *CustomerHandler {
 	return &CustomerHandler{service: service}
 }
