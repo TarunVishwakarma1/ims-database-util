@@ -154,7 +154,8 @@ func (r *postgresCustomerRepo) GetByUserId(ctx context.Context, userId string) (
 		SELECT id, first_name, last_name, email, phone, address, status, user_id, created_at, updated_at
 		FROM customers
 		WHERE user_id = $1
-		ORDER BY created_at DESC`
+		ORDER BY created_at DESC
+		LIMIT 1000`
 
 	rows, err := r.pool.Query(ctx, query, userId)
 	if err != nil {

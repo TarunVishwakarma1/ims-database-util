@@ -39,7 +39,7 @@ func Setup(a *app.App) *chi.Mux {
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Get("/v1/customers/stream", customerHandler.StreamCutomers)
+		r.Get("/v1/customers/stream", customerHandler.StreamCustomers)
 	})
 	return r
 }

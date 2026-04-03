@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"ims-database-util/internal/repository"
-	"log/slog"
-	"time"
 )
 
 type CustomerService interface {
@@ -24,10 +22,10 @@ func (s *customerService) StreamCustomers(
 	ctx context.Context,
 	handler func([]repository.Customer) error,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	batchSize := 10
+	batchSize := 100
 
 	err := s.repo.StreamCustomers(ctx, batchSize, func(batch []repository.Customer) error {
 		select {
@@ -39,7 +37,6 @@ func (s *customerService) StreamCustomers(
 	})
 
 	if err != nil {
-		slog.Error("StreamCustomers failed", "error", err)
 		return fmt.Errorf("streaming failed: %w", err)
 	}
 

@@ -31,13 +31,13 @@ func New(cfg *config.Config, pgPool *pgxpool.Pool, rdb *redis.Client) *App {
 	// Repositories
 	userRepo := repository.NewUserRepository(pgPool)
 	productRepo := repository.NewProductRepository(pgPool)
-	cusomerRepo := repository.NewCustomerRepository(pgPool)
+	customerRepo := repository.NewCustomerRepository(pgPool)
 	// _ = repository.NewSessionRepository(rdb) // wire when auth handler is ready
 
 	// Services
 	userService := service.NewUserService(userRepo)
 	productService := service.NewProductService(productRepo)
-	customerService := service.NewCustomerService(cusomerRepo)
+	customerService := service.NewCustomerService(customerRepo)
 
 	_ = rdb // acknowledge redis client; will be used when SessionService is added
 

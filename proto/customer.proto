@@ -19,6 +19,6 @@ message Customer {
     string updatedAt=10;
 }
 
-service CustomerService{
+service CustomerService {
     rpc StreamCustomers(Empty) returns (stream Customer);
 }

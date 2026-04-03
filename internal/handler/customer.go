@@ -17,7 +17,7 @@ func NewCustomerHandler(service service.CustomerService) *CustomerHandler {
 	return &CustomerHandler{service: service}
 }
 
-func (h *CustomerHandler) StreamCutomers(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) StreamCustomers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// SSE headers
@@ -32,9 +32,12 @@ func (h *CustomerHandler) StreamCutomers(w http.ResponseWriter, r *http.Request)
 	}
 
 	err := h.service.StreamCustomers(ctx, func(batch []repository.Customer) error {
-		data, _ := json.Marshal(batch)
+		data, err := json.Marshal(batch)
+		if err != nil {
+			return fmt.Errorf("failed to marshal batch: %w", err)
+		}
 
-		_, err := fmt.Fprintf(w, "data: %s\n\n", data)
+		_, err = fmt.Fprintf(w, "data: %s\n\n", data)
 		if err != nil {
 			return err
 		}
@@ -45,6 +48,9 @@ func (h *CustomerHandler) StreamCutomers(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		slog.Error("stream error", "error", err)
+		fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+		flusher.Flush()
+		return
 	}
 
 	fmt.Fprintf(w, "event: end\ndata: done\n\n")
