@@ -45,15 +45,55 @@ func (r *postgresProductRepo) StreamProducts(
 	batchSize int,
 	handler func([]Product) error,
 ) error {
+	var lastAddedAt time.Time
+	var lastId string
 
-	rows, err := r.pool.Query(ctx, `
+	for {
+		batch, err := r.fetchProductBatch(ctx, batchSize, lastAddedAt, lastId)
+		if err != nil {
+			return err
+		}
+
+		if len(batch) == 0 {
+			break
+		}
+
+		if err := handler(batch); err != nil {
+			return err
+		}
+
+		lastProduct := batch[len(batch)-1]
+		lastAddedAt = lastProduct.AddedAt
+		lastId = lastProduct.Id
+	}
+
+	return nil
+}
+
+func (r *postgresProductRepo) fetchProductBatch(
+	ctx context.Context, 
+	batchSize int, 
+	lastAddedAt time.Time, 
+	lastId string,
+) ([]Product, error) {
+	query := `
 		SELECT id, sku, name, category, price, stock, status,
 		       last_updated, updated_by, added_by, user_id, added_at
-		FROM products
-		ORDER BY added_at
-	`)
+		FROM products`
+		
+	var args []any
+
+	if lastId != "" {
+		query += ` WHERE (added_at, id) > ($1, $2)`
+		args = append(args, lastAddedAt, lastId)
+	}
+
+	query += fmt.Sprintf(` ORDER BY added_at ASC, id ASC LIMIT $%d`, len(args)+1)
+	args = append(args, batchSize)
+
+	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
-		return fmt.Errorf("query error: %w", err)
+		return nil, fmt.Errorf("query error: %w", err)
 	}
 	defer rows.Close()
 
@@ -75,26 +115,16 @@ func (r *postgresProductRepo) StreamProducts(
 			&p.UserId,
 			&p.AddedAt,
 		); err != nil {
-			return fmt.Errorf("scan error: %w", err)
+			return nil, fmt.Errorf("scan error: %w", err)
 		}
-
 		batch = append(batch, p)
-
-		if len(batch) == batchSize {
-			if err := handler(batch); err != nil {
-				return err
-			}
-			batch = batch[:0]
-		}
 	}
 
-	if len(batch) > 0 {
-		if err := handler(batch); err != nil {
-			return err
-		}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
 	}
 
-	return rows.Err()
+	return batch, nil
 }
 
 func (r *postgresProductRepo) GetProductById(ctx context.Context, productId string) (Product, error) {

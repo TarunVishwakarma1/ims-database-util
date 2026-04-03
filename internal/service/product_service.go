@@ -37,7 +37,7 @@ func (s *productService) StreamProducts(
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	batchSize := 100
+	batchSize := 10
 
 	err := s.repo.StreamProducts(ctx, batchSize, func(batch []repository.Product) error {
 		// 🧠 Backpressure / cancellation
