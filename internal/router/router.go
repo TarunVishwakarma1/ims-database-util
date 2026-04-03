@@ -12,7 +12,7 @@ import (
 
 // Setup creates a chi router configured with standard middleware and the application's HTTP routes.
 // The router registers request ID, real IP, logging, and recoverer middleware, exposes a public GET /health endpoint that responds "OK", and a grouped set of routes protected by HMAC using cfg.HMACSecret which includes GET /v1/user/profile handled by the user repository-backed handler.
-func Setup(cfg *config.Config, userRepo repository.UserRepository) *chi.Mux {
+func Setup(cfg *config.Config, userRepo repository.UserRepository, productRepo repository.ProductRepository) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -21,6 +21,7 @@ func Setup(cfg *config.Config, userRepo repository.UserRepository) *chi.Mux {
 	r.Use(middleware.Recoverer)
 
 	userHandler := handler.NewUserHandler(userRepo)
+	productHandler := handler.NewProductHandler(productRepo)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -30,6 +31,10 @@ func Setup(cfg *config.Config, userRepo repository.UserRepository) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(handler.RequireHMAC(cfg.HMACSecret))
 		r.Get("/v1/user/profile", userHandler.GetProfile)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Get("/v1/ims/get/products", productHandler.GetProductByUserId)
 	})
 
 	return r

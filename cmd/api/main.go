@@ -30,18 +30,21 @@ func main() {
 	pgPool, err := storage.InitPostgres(ctx, cfg.PostgresURL)
 	if err != nil {
 		slog.Error("Fatal: Database connection failed:", "Error", err)
+		os.Exit(1)
 	}
 	defer pgPool.Close()
 
 	rdb, err := storage.InitRedis(ctx, cfg.RedisURL)
 	if err != nil {
 		slog.Error("Fatal: Redis connection failed:", "Error", err)
+		os.Exit(1)
 	}
 	defer rdb.Close()
 
 	userRepo := repository.NewUserRepository(pgPool)
+	productRepo := repository.NewProductRepository(pgPool)
 
-	appRouter := router.Setup(cfg, userRepo)
+	appRouter := router.Setup(cfg, userRepo, productRepo)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

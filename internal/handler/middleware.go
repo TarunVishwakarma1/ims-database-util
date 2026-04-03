@@ -10,7 +10,7 @@ import (
 )
 
 // RequireHMAC returns an HTTP middleware constructor that enforces HMAC-SHA256 request authentication using the provided secret.
-// 
+//
 // The middleware requires requests to include `x-timestamp` (milliseconds since epoch) and `x-signature` headers.
 // It rejects requests when either header is missing, when `x-timestamp` cannot be parsed as a base-10 int64, or when the timestamp
 // is more than 10 seconds in the past or more than 10 seconds in the future (responding with 401 and an explanatory message).

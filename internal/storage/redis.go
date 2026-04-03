@@ -30,7 +30,7 @@ func InitRedis(ctx context.Context, connString string) (*redis.Client, error) {
 			return
 		}
 
-		opts.DialTimeout = 500 * time.Millisecond
+		opts.DialTimeout = 10000 * time.Millisecond
 		opts.ReadTimeout = 500 * time.Millisecond
 		opts.WriteTimeout = 500 * time.Millisecond
 		opts.PoolSize = 100

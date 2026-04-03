@@ -16,7 +16,7 @@ type Config struct {
 
 // Load attempts to load environment variables from a .env file and returns a *Config
 // populated from environment variables with sensible defaults.
-// 
+//
 // If loading a .env file fails, the error is logged and environment variables are used.
 // The returned Config fields are sourced from the following environment variables with
 // their respective fallbacks:
@@ -31,7 +31,7 @@ func Load() *Config {
 	}
 
 	return &Config{
-		PostgresURL: getEnv("DATABASE_URL", "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"),
+		PostgresURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		Port:        getEnv("PORT", "8081"),
 		HMACSecret:  getEnv("HMAC_SECRET", "super-secret-local-dev-key-change-me"),

@@ -1,36 +1,45 @@
-# --- Stage 1: Builder ---
-FROM golang:1.21-alpine AS builder
+# ==========================================
+# STAGE 1: The Builder
+# ==========================================
+FROM golang:1.25-alpine AS builder
 
-# Set the working directory
+# 1. Install CA certificates 
+# (Required if your Go app ever needs to make secure HTTPS requests to other APIs)
+RUN apk --no-cache add ca-certificates tzdata
+
+# 2. Set the working directory inside the container
 WORKDIR /app
 
-# Install git (required for fetching Go dependencies)
-RUN apk update && apk add --no-cache git
-
-# Copy go.mod and go.sum first to leverage Docker cache
+# 3. Cache dependencies
+# We copy the mod files first. If they haven't changed, Docker caches the downloaded modules,
+# making subsequent builds lightning fast.
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the source code
+# 4. Copy the rest of the application code
 COPY . .
 
-# Build the statically linked binary. 
-# CGO_ENABLED=0 ensures it doesn't rely on host OS C libraries.
-# -ldflags="-w -s" strips debugging information to reduce file size.
+# 5. Compile the Go binary
+# - CGO_ENABLED=0: Disables C dependencies, creating a 100% statically linked binary.
+# - GOOS=linux GOARCH=amd64: Ensures it compiles for standard Linux servers.
+# - ldflags="-w -s": Strips out debugging information and symbol tables to drastically reduce file size.
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go-api ./cmd/api/main.go
 
-# --- Stage 2: Final Production Image ---
-# 'scratch' is a literally empty image. Zero bloat.
+# ==========================================
+# STAGE 2: The Production Image
+# ==========================================
+# 'scratch' is a special Docker keyword for a completely empty image (0 MB).
 FROM scratch
 
-# We must copy root certificates from the builder so Go can make HTTPS requests
+# 1. Copy the timezone data and SSL certificates from the builder
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Copy the compiled binary from the builder stage
+# 2. Copy our compiled binary from the builder stage
 COPY --from=builder /go-api /go-api
 
-# Expose the port
+# 3. Document the port the container listens on
 EXPOSE 8080
 
-# Run the binary
+# 4. Execute the binary directly (No shell script wrapper)
 ENTRYPOINT ["/go-api"]

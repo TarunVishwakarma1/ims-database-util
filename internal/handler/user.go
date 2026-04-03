@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
 	"ims-database-util/internal/repository"
+	"ims-database-util/internal/utils"
 	"net/http"
 )
 
@@ -18,26 +18,20 @@ func NewUserHandler(repo repository.UserRepository) *UserHandler {
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get("x-user-id")
 	if userId == "" {
-		h.jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Missing user ID header"})
+		utils.JSONResponse(w, http.StatusBadRequest, map[string]string{"error": "Missing user ID header"})
 		return
 	}
 	user, err := h.repo.GetUserByID(r.Context(), userId)
 
 	if err != nil {
-		h.jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+		utils.JSONResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return
 	}
 
 	if user == nil {
-		h.jsonResponse(w, http.StatusNotFound, map[string]string{"error": "User not found"})
+		utils.JSONResponse(w, http.StatusNotFound, map[string]string{"error": "User not found"})
 		return
 	}
 
-	h.jsonResponse(w, http.StatusOK, user)
-}
-
-func (h *UserHandler) jsonResponse(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	utils.JSONResponse(w, http.StatusOK, user)
 }
