@@ -26,7 +26,10 @@ type App struct {
 	// InventoryService service.InventoryService
 }
 
-// New builds the full application dependency graph from infrastructure handles.
+// New constructs an App by wiring repositories and services from the provided
+// configuration, Postgres connection pool, and Redis client.
+// It returns an *App with Config set and UserService, ProductService, and
+// CustomerService initialized.
 func New(cfg *config.Config, pgPool *pgxpool.Pool, rdb *redis.Client) *App {
 	// Repositories
 	userRepo := repository.NewUserRepository(pgPool)

@@ -14,6 +14,7 @@ type customerService struct {
 	repo repository.CustomerRepository
 }
 
+// NewCustomerService returns a CustomerService backed by the provided CustomerRepository.
 func NewCustomerService(repo repository.CustomerRepository) CustomerService {
 	return &customerService{repo: repo}
 }

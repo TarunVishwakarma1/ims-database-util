@@ -23,7 +23,8 @@ type Server struct {
 	app  *app.App
 }
 
-// New creates a Server wired to the given App.
+// New creates a Server wired to the provided App.
+// The returned Server contains an HTTP server configured with the app's router and timeouts, and a gRPC server with reflection enabled and Product and Customer services registered.
 func New(a *app.App) *Server {
 	// HTTP
 	mux := router.Setup(a)
