@@ -34,6 +34,7 @@ type postgresCustomerRepo struct {
 	pool *pgxpool.Pool
 }
 
+// NewCustomerRepository constructs a CustomerRepository backed by PostgreSQL using the provided pgxpool.Pool.
 func NewCustomerRepository(pool *pgxpool.Pool) CustomerRepository {
 	return &postgresCustomerRepo{pool: pool}
 }

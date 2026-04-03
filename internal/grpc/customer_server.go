@@ -11,6 +11,8 @@ type CustomerServer struct {
 	service service.CustomerService
 }
 
+// NewCustomerServer creates a CustomerServer that delegates customer-related operations to the provided CustomerService.
+// The returned server is ready to be registered with a gRPC server.
 func NewCustomerServer(s service.CustomerService) *CustomerServer {
 	return &CustomerServer{service: s}
 }

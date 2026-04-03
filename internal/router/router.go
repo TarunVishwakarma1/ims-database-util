@@ -11,7 +11,15 @@ import (
 )
 
 // Setup creates a chi router configured with standard middleware and the application's HTTP routes.
-// It accepts the central App struct so new domains can be wired without changing this signature.
+// Setup creates and returns a configured chi router for the given application.
+// 
+// The router is populated with standard middleware, a health endpoint, and domain routes:
+// - GET /health responds with HTTP 200 and body "OK".
+// - A user group protected by HMAC middleware exposes GET /v1/user/profile.
+// - A products group exposes GET /v1/products/stream.
+// - A customers group exposes GET /v1/customers/stream.
+// 
+// The App parameter supplies services and configuration used to wire domain handlers and middleware.
 func Setup(a *app.App) *chi.Mux {
 	r := chi.NewRouter()
 
