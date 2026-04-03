@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"ims-database-util/internal/app"
+	customerpb "ims-database-util/internal/gen/customerpb"
 	productpb "ims-database-util/internal/gen/productpb"
 	internalgrpc "ims-database-util/internal/grpc"
 	"ims-database-util/internal/router"
@@ -40,6 +41,11 @@ func New(a *app.App) *Server {
 	productpb.RegisterProductServiceServer(
 		grpcSrv,
 		internalgrpc.NewProductServer(a.ProductService),
+	)
+
+	customerpb.RegisterCustomerServiceServer(
+		grpcSrv,
+		internalgrpc.NewCustomerServer(a.CustomerService),
 	)
 
 	return &Server{

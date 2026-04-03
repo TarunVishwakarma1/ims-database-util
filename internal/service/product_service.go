@@ -34,7 +34,7 @@ func (s *productService) StreamProducts(
 ) error {
 
 	// ⏱️ Add timeout (important for safety)
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	batchSize := 100

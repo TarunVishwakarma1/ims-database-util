@@ -22,6 +22,7 @@ func Setup(a *app.App) *chi.Mux {
 
 	userHandler := handler.NewUserHandler(a.UserService)
 	productHandler := handler.NewProductHandler(a.ProductService)
+	customerHandler := handler.NewCustomerHandler(a.CustomerService)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -37,5 +38,8 @@ func Setup(a *app.App) *chi.Mux {
 		r.Get("/v1/products/stream", productHandler.StreamProducts)
 	})
 
+	r.Group(func(r chi.Router) {
+		r.Get("/v1/customers/stream", customerHandler.StreamCustomers)
+	})
 	return r
 }

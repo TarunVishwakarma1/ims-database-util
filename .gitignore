@@ -1,3 +1,8 @@
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
 .env
 ims-database-util
 test-api.js
